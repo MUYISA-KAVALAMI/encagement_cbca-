@@ -1,0 +1,200 @@
+{% extends "base.html" %}
+{% block title %}Ajouter un Paiement - CBCA Vulumbi{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-cbca">
+                    <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Ajouter un Paiement</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" id="paiementForm">
+                        <div class="mb-3">
+                            <label for="engagement_id" class="form-label">Engagement concerné</label>
+                            <select id="engagement_id" name="engagement_id" class="form-select" required>
+                                <option value="">-- Sélectionnez un engagement --</option>
+                                {% for e in engagements %}
+                                <option value="{{ e.id }}">
+                                    {{ e.membre.cartebapteme.nom }} – {{ "%.2f"|format(e.montant_total) }}$ (Limite {{ e.date_limite.strftime('%d/%m/%Y') }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="montant" class="form-label">Montant payé</label>
+                            <input type="number" id="montant" name="montant" class="form-control" required step="0.01" min="0">
+                        </div>
+                        <div class="mb-3">
+                            <label for="date_paiement" class="form-label">Date du paiement</label>
+                            <input type="date" id="date_paiement" name="date_paiement" class="form-control" value="{{ date.today() }}">
+                        </div>
+                        <div class="text-end mt-4">
+                            <a href="{{ url_for('liste_paiements') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-left me-1"></i>Retour
+                            </a>
+                            <button type="submit" class="btn btn-cbca">
+                                <i class="fas fa-save me-1"></i>Enregistrer
+                            </button>
+                            <button type="button" id="printReceiptBtn" class="btn btn-primary" disabled>
+                                <i class="fas fa-print me-1"></i>Imprimer le reçu
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="alert alert-info mt-3">
+                <i class="fas fa-info-circle me-2"></i>
+                Seuls les paiements liés à un engagement sont autorisés.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reçu de paiement (caché par défaut) -->
+<div id="receiptTemplate" class="d-none">
+    <div class="receipt-container p-4">
+        <div class="text-center mb-4">
+            <h3>CBCA VULUMBI</h3>
+            <h5>Reçu de Paiement</h5>
+            <p>Date: <span id="receiptDate"></span></p>
+        </div>
+        
+        <div class="receipt-details">
+            <div class="row mb-2">
+                <div class="col-6"><strong>Membre:</strong></div>
+                <div class="col-6" id="receiptMembre"></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-6"><strong>Montant payé:</strong></div>
+                <div class="col-6" id="receiptMontant"></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-6"><strong>Pour l'engagement du:</strong></div>
+                <div class="col-6" id="receiptEngagementDate"></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-6"><strong>Montant total engagé:</strong></div>
+                <div class="col-6" id="receiptTotalEngage"></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-6"><strong>Reste à payer:</strong></div>
+                <div class="col-6" id="receiptReste"></div>
+            </div>
+        </div>
+        
+        <div class="signature mt-5 pt-4">
+            <div class="row">
+                <div class="col-6 text-center">
+                    <p>Signature du membre</p>
+                    <div class="signature-line"></div>
+                </div>
+                <div class="col-6 text-center">
+                    <p>Signature du trésorier</p>
+                    <div class="signature-line"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer mt-4 pt-2 text-center">
+            <small>Merci pour votre contribution à l'église CBCA Vulumbi</small>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Style pour l'impression */
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .receipt-container, .receipt-container * {
+            visibility: visible;
+        }
+        .receipt-container {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            padding: 20px;
+            font-size: 14pt;
+        }
+        .signature-line {
+            border-top: 1px solid #000;
+            width: 80%;
+            margin: 20px auto 0;
+        }
+        .no-print {
+            display: none !important;
+        }
+    }
+    
+    /* Style pour le reçu */
+    .receipt-container {
+        max-width: 600px;
+        margin: 0 auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #fff;
+    }
+    
+    .receipt-details {
+        border-top: 1px dashed #ddd;
+        border-bottom: 1px dashed #ddd;
+        padding: 15px 0;
+        margin: 15px 0;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('paiementForm');
+        const printBtn = document.getElementById('printReceiptBtn');
+        
+        // Activer le bouton d'impression après soumission
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Simuler l'envoi du formulaire (dans une vraie app, vous auriez une réponse du serveur)
+            setTimeout(() => {
+                // Remplir les données du reçu
+                const selectedOption = document.querySelector('#engagement_id option:checked');
+                if (selectedOption) {
+                    const membreText = selectedOption.textContent.split('–')[0].trim();
+                    const montant = document.getElementById('montant').value;
+                    const datePaiement = document.getElementById('date_paiement').value;
+                    
+                    document.getElementById('receiptMembre').textContent = membreText;
+                    document.getElementById('receiptMontant').textContent = parseFloat(montant).toFixed(2) + ' $';
+                    document.getElementById('receiptDate').textContent = new Date(datePaiement).toLocaleDateString('fr-FR');
+                    
+                    // Ces valeurs devraient normalement venir de la réponse du serveur
+                    document.getElementById('receiptEngagementDate').textContent = selectedOption.textContent.match(/\((.*?)\)/)[1];
+                    document.getElementById('receiptTotalEngage').textContent = selectedOption.textContent.split('–')[1].split('$')[0].trim() + ' $';
+                    
+                    const reste = parseFloat(selectedOption.textContent.split('–')[1].split('$')[0].trim()) - parseFloat(montant);
+                    document.getElementById('receiptReste').textContent = reste.toFixed(2) + ' $';
+                    
+                    // Activer le bouton d'impression
+                    printBtn.disabled = false;
+                }
+            }, 500);
+        });
+        
+        // Imprimer le reçu
+        printBtn.addEventListener('click', function() {
+            const receiptContent = document.getElementById('receiptTemplate').innerHTML;
+            const originalBody = document.body.innerHTML;
+            
+            document.body.innerHTML = receiptContent;
+            window.print();
+            document.body.innerHTML = originalBody;
+            
+            // Réactiver le formulaire après impression
+            form.reset();
+            printBtn.disabled = true;
+        });
+    });
+</script>
+{% endblock %}

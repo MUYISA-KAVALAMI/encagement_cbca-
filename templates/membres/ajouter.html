@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Ajouter un Membre - CBCA Vulumbi{% endblock %}
+
+{% block css %}
+<style>
+    .form-section {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    
+    .form-header {
+        border-bottom: 3px solid #e30613;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #e30613;
+    }
+    
+    .photo-upload {
+        border: 2px dashed #ddd;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .photo-upload:hover {
+        border-color: #e30613;
+    }
+    
+    .photo-preview {
+        max-width: 150px;
+        max-height: 150px;
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="form-section p-4 mb-4">
+                <div class="form-header pb-3 mb-4">
+                    <h2 class="text-cbca">
+                        <i class="fas fa-user-plus me-2"></i>Ajouter un Nouveau Membre
+                    </h2>
+                    <p class="text-muted">Remplissez le formulaire pour enregistrer un nouveau membre</p>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    
+                    <div class="row">
+                        <!-- Colonne de gauche -->
+                        <div class="col-md-6">
+                            <!-- Informations de base -->
+                            <div class="mb-3">
+                                <label for="nom" class="form-label required-field">Sélectionnez un membre</label>
+                            <select id="carte" name="carte" class="form-select" required>
+                                <option value="">-- Sélectionnez un membre --</option>
+                                {% for cartes in cartes %}
+                                <option value="{{ cartes.id }}">{{ cartes.numero }} — {{ cartes.nom }}
+
+                                </option>
+                            {% endfor %}
+                        </select>
+
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="telephone" class="form-label required-field">Téléphone</label>
+                                <input type="tel" class="form-control" id="telephone" name="telephone" required>
+                            </div>
+                            
+                            
+                        </div>
+                        
+                        <!-- Colonne de droite -->
+                        <div class="col-md-6">
+                            <!-- Détails supplémentaires -->
+                            
+                            <div class="mb-3">
+                                <label for="groupe" class="form-label">Groupe/Service</label>
+                                <select class="form-select" id="groupe" name="groupe">
+                                    <option value="" selected>Sélectionnez un groupe</option>
+                                    {% for groupe in groupes %}
+                                    <option value="{{ groupe }}">{{ groupe }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="api" class="form-label">API_KEY</label>
+                                <input type="number" class="form-control" id="api" name="api">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('liste_membres') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Retour
+                        </a>
+                        <button type="submit" class="btn btn-cbca">
+                            <i class="fas fa-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Les champs marqués d'un astérisque (<span class="text-cbca">*</span>) sont obligatoires.
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<script>
+    // Prévisualisation de la photo
+    // Validation du formulaire côté client
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const telephone = document.getElementById('telephone').value;
+        if (telephone && !/^[\d\s+-]+$/.test(telephone)) {
+            alert('Veuillez entrer un numéro de téléphone valide');
+            e.preventDefault();
+        }
+        
+        
+    });
+</script>
+{% endblock %}

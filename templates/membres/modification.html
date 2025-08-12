@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Modifier Membre - CBCA Vulumbi{% endblock %}
+
+{% block css %}
+<!-- Les mêmes styles que ajouter.html -->
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="form-section p-4 mb-4">
+                <div class="form-header pb-3 mb-4">
+                    <h2 class="text-cbca">
+                        <i class="fas fa-user-edit me-2"></i>Modifier Membre
+                    </h2>
+                    <p class="text-muted">Mettez à jour les informations de {{ membre.nom }}</p>
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data" id="member-form">
+                    <div class="row">
+                        <!-- Colonne de gauche -->
+                        <div class="col-md-6">
+                            <!-- Photo de profil -->
+                            <div class="mb-4 text-center">
+                                <label class="d-block mb-2">Photo</label>
+                                <label for="photo" class="photo-upload">
+                                    {% if membre.photo %}
+                                    <img id="photo-preview" class="photo-preview" 
+                                         src="{{ url_for('static', filename='uploads/' + membre.photo) }}">
+                                    {% else %}
+                                    <i class="fas fa-camera fa-3x mb-3 text-muted"></i>
+                                    <p class="mb-0">Cliquez pour changer la photo</p>
+                                    <img id="photo-preview" class="photo-preview mt-2" style="display:none;">
+                                    {% endif %}
+                                </label>
+                                <input type="file" id="photo" name="photo" accept="image/*" class="d-none">
+                                {% if membre.photo %}
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="checkbox" id="remove_photo" name="remove_photo">
+                                    <label class="form-check-label text-danger" for="remove_photo">
+                                        Supprimer la photo actuelle
+                                    </label>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Informations de base -->
+                            <div class="mb-3">
+                                <label for="nom" class="form-label required-field">Nom complet</label>
+                                <input type="text" class="form-control" id="nom" name="nom" value="{{ membre.nom }}" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="telephone" class="form-label required-field">Téléphone</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">+243</span>
+                                    <input type="tel" class="form-control" id="telephone" name="telephone" value="{{ membre.telephone }}" required>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" value="{{ membre.email or '' }}">
+                            </div>
+                        </div>
+                        
+                        <!-- Colonne de droite -->
+                        <div class="col-md-6">
+                            <!-- Détails supplémentaires -->
+                            <div class="mb-3">
+                                <label for="date_naissance" class="form-label">Date de naissance</label>
+                                <input type="date" class="form-control" id="date_naissance" name="date_naissance" 
+                                       value="{{ membre.date_naissance.strftime('%Y-%m-%d') if membre.date_naissance else '' }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label required-field">Sexe</label>
+                                <div class="btn-group w-100 gender-select" role="group">
+                                    <input type="radio" class="btn-check" name="sexe" id="sexe_m" value="M" 
+                                           {% if membre.sexe == 'M' %}checked{% endif %} required>
+                                    <label class="btn btn-outline-cbca" for="sexe_m">
+                                        <i class="fas fa-male me-2"></i>Masculin
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="sexe" id="sexe_f" value="F"
+                                           {% if membre.sexe == 'F' %}checked{% endif %}>
+                                    <label class="btn btn-outline-cbca" for="sexe_f">
+                                        <i class="fas fa-female me-2"></i>Féminin
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="adresse" class="form-label">Adresse</label>
+                                <textarea class="form-control" id="adresse" name="adresse" rows="2">{{ membre.adresse or '' }}</textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="groupe" class="form-label">Groupe/Service</label>
+                                <select class="form-select" id="groupe" name="groupe">
+                                    <option value="" {% if not membre.groupe %}selected{% endif %}>Sélectionnez un groupe</option>
+                                    {% for groupe in groupes %}
+                                    <option value="{{ groupe }}" {% if membre.groupe == groupe %}selected{% endif %}>{{ groupe }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="statut" class="form-label required-field">Statut</label>
+                                <select class="form-select" id="statut" name="statut" required>
+                                    <option value="actif" {% if membre.statut == 'actif' %}selected{% endif %}>Actif</option>
+                                    <option value="inactif" {% if membre.statut == 'inactif' %}selected{% endif %}>Inactif</option>
+                                    <option value="décédé" {% if membre.statut == 'décédé' %}selected{% endif %}>Décédé</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{{ url_for('detail_membre', id=membre.id) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn btn-cbca">
+                            <i class="fas fa-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<!-- Le même JS que ajouter.html -->
+{% endblock %}

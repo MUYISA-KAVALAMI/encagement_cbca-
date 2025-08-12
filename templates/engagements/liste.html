@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}Engagements des Membres - CBCA Vulumbi{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0 mt-3 printable-area">
+  <div class="card-header bg-cbca no-print">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fas fa-handshake me-2"></i>Engagements des Membres</h5>
+      <div class="d-flex gap-2">
+        <button id="printButton" class="btn btn-light btn-sm no-print">
+          <i class="fas fa-print me-1"></i>Imprimer
+        </button>
+        <a href="{{ url_for('ajouter_engagement') }}" class="btn btn-light btn-sm no-print">
+          <i class="fas fa-plus me-1"></i>Ajouter
+        </a>
+        <a href="{{ url_for('notifier_tous_membres') }}" class="btn btn-warning btn-sm no-print">
+          <i class="fas fa-bell me-1"></i>Notifier
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>N°</th>
+            <th>Membre</th>
+            <th>Engagé ($)</th>
+            <th>Payé ($)</th>
+            <th>Restant ($)</th>
+            <th>Date Limite</th>
+            <th class="no-print">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for engagement in engagements %}
+          {% set paye = engagement.montant_total - engagement.montant_restant() %}
+          <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ engagement.membre.cartebapteme.nom }}</td>
+            <td>{{ "%.2f"|format(engagement.montant_total) }}</td>
+            <td class="text-success">{{ "%.2f"|format(paye) }}</td>
+            <td class="{{ 'text-danger' if engagement.montant_restant() > 0 else 'text-success' }}">
+              {{ "%.2f"|format(engagement.montant_restant()) }}
+            </td>
+            <td>{{ engagement.date_limite.strftime('%d/%m/%Y') }}</td>
+            <td class="no-print">
+              <div class="d-flex gap-1">
+                <!-- Bouton modifier -->
+                <a href="#" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEdit{{ engagement.id }}">
+                  <i class="fas fa-edit"></i>
+                </a>
+
+                <!-- Bouton notifier -->
+                {% if engagement.montant_restant() > 0 %}
+                <form method="POST" action="{{ url_for('notifier_membre_engagement', id=engagement.id) }}">
+                  <button type="submit" class="btn btn-sm btn-outline-warning">
+                    <i class="fas fa-bell"></i>
+                  </button>
+                </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Style pour l'impression -->
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 1cm;
+  }
+  
+  @media print {
+    body * {
+      visibility: hidden;
+      margin: 0;
+      padding: 0;
+    }
+    
+    .printable-area, .printable-area * {
+      visibility: visible;
+    }
+    
+    .printable-area {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      border: none;
+      box-shadow: none;
+      padding: 0;
+      margin: 0;
+    }
+    
+    .no-print, .no-print * {
+      display: none !important;
+    }
+    
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12pt;
+    }
+    
+    .table th {
+      background-color: #f2f2f2 !important;
+      color: #000 !important;
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+    
+    .table td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    
+    .text-success {
+      color: green !important;
+      font-weight: bold;
+    }
+    
+    .text-danger {
+      color: red !important;
+      font-weight: bold;
+    }
+    
+    /* En-tête d'impression */
+    .print-title {
+      font-size: 18pt;
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+    
+    .print-subtitle {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #000;
+      padding-bottom: 10px;
+    }
+  }
+</style>
+
+<script>
+  document.getElementById('printButton').addEventListener('click', function() {
+    // Créer un en-tête d'impression
+    const printHeader = document.createElement('div');
+    printHeader.className = 'no-screen';
+    printHeader.innerHTML = `
+      <div class="print-title">Engagements des Membres</div>
+      <div class="print-subtitle">
+        CBCA Vulumbi - Imprimé le ${new Date().toLocaleDateString()}
+      </div>
+    `;
+    
+    // Ajouter le style pour masquer l'en-tête à l'écran
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .no-screen { display: none; }
+      @media print { .no-screen { display: block !important; } }
+    `;
+    
+    document.head.appendChild(style);
+    document.querySelector('.card-body').prepend(printHeader);
+    
+    window.print();
+    
+    // Nettoyer après l'impression
+    document.head.removeChild(style);
+    printHeader.remove();
+  });
+</script>
+
+<!-- Modals (conservés mais masqués à l'impression) -->
+{% for engagement in engagements %}
+<div class="modal fade no-print" id="modalEdit{{ engagement.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('modifier_engagement', id=engagement.id) }}">
+        <div class="modal-header bg-secondary text-white">
+          <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Modifier Engagement</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Contenu du modal inchangé -->
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,28 @@
+<!-- templates/utilisateurs/ajouter.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>Créer un nouvel utilisateur</h2>
+
+<form method="POST">
+    <div class="mb-3">
+        <label>Nom d'utilisateur *</label>
+        <input type="text" name="username" class="form-control" required>
+    </div>
+    
+    <div class="mb-3">
+        <label>Mot de passe *</label>
+        <input type="password" name="password" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>Rôle *</label>
+        <select name="role" class="form-control" required>
+            {% for r in roles %}
+            <option value="{{ r }}">{{ r | capitalize }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <button type="submit" class="btn btn-success">Créer</button>
+    <a href="{{ url_for('liste_utilisateurs') }}" class="btn btn-secondary">Annuler</a>
+</form>
+{% endblock %}

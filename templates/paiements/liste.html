@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Liste des Paiements - CBCA Vulumbi{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0 mt-3">
+  <div class="card-header bg-cbca ">
+    <div class="d-flex justify-content-between align-items-center">
+      <h5 class="mb-0"><i class="fas fa-credit-card me-2"></i>Historique des Paiements</h5>
+      <a href="{{ url_for('ajouter_paiement') }}" class="btn btn-light btn-sm">
+        <i class="fas fa-plus me-1"></i>Ajouter</a>
+    </div>
+  </div>
+
+  <div class="card-body">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Membre</th>
+            <th>Montant payé</th>
+            <th>Montant engagement</th>
+            <th>Restant au moment</th>
+            <th>Progression</th>
+            <th>Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for paiement in paiements %}
+          {% set restant = paiement.engagement.montant_restant_au(paiement.date_paiement) %}
+
+          {% set total = paiement.engagement.montant_total %}
+          {% set payé = total - restant %}
+          <tr class="{% if restant <= 0 %}table-success{% endif %}">
+            <td>{{ paiement.engagement.membre.cartebapteme.nom }}</td>
+            <td>{{ "%.2f"|format(paiement.montant) }} $</td>
+            <td>{{ "%.2f"|format(total) }} $</td>
+            <td>
+              {% if restant <= 0 %}
+                <span class="badge bg-success">Soldé</span>
+              {% else %}
+                <span class="badge bg-warning text-dark">{{ "%.2f"|format(restant) }} $</span>
+              {% endif %}
+            </td>
+            <td style="min-width: 150px;">
+              <small class="text-muted">{{ "%.2f"|format(payé) }} $ / {{ "%.2f"|format(total) }} $</small>
+              <div class="progress" style="height: 6px;">
+                <div class="progress-bar bg-cbca" role="progressbar"
+                     style="width: {{ (payé * 100 / total)|round(2) }}%;"></div>
+              </div>
+            </td>
+            <td>{{ paiement.date_paiement.strftime('%d/%m/%Y') }}</td>
+            <td>
+              <a href="#" class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalEdit{{ paiement.id }}">
+                <i class="fas fa-edit"></i>
+              </a>
+            </td>
+          </tr>
+
+          <!-- Modal Modification -->
+          <div class="modal fade" id="modalEdit{{ paiement.id }}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+              <div class="modal-content">
+                <form method="POST" action="{{ url_for('modifier_paiement', id=paiement.id) }}">
+                  <div class="modal-header bg-secondary text-white">
+                    <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Modifier Paiement</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body">
+                    <div class="mb-3">
+                      <label class="form-label">Montant</label>
+                      <input type="number" name="montant" class="form-control" step="0.01" min="0" value="{{ paiement.montant }}" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Date du paiement</label>
+                      <input type="date" name="date_paiement" class="form-control" value="{{ paiement.date_paiement.strftime('%Y-%m-%d') }}" required>
+                    </div>
+                  </div>
+                  <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Enregistrer</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

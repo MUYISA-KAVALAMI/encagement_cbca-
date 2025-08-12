@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des Membres - CBCA Vulumbi{% endblock %}
+
+{% block content %}
+<div class="card shadow-sm border-0 printable-area">
+    <div class="card-header bg-cbca text-white no-print">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0"><i class="fas fa-users me-2"></i>Liste des Membres</h4>
+            <div>
+                <button id="printButton" class="btn btn-light btn-sm me-2 no-print">
+                    <i class="fas fa-print me-1"></i>Imprimer
+                </button>
+                <a href="{{ url_for('ajouter_membre') }}" class="btn btn-light btn-sm no-print">
+                    <i class="fas fa-plus me-1"></i>Ajouter
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover" id="membersTable">
+                <thead class="table-light">
+                    <tr>
+                        <th>N°</th>
+                        <th>Nom complet</th>
+                        <th>Téléphone</th>
+                        <th>Adresse</th>
+                        <th>Groupe</th>
+                        <th class="no-print">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for membre in membres %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ membre.cartebapteme.nom }}</td>
+                        <td>{{ membre.telephone }}</td>
+                        <td>{{ membre.cartebapteme.adresse or '-' }}</td>
+                        <td>{{ membre.groupe or '-' }}</td>
+                        <td class="no-print">
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="#" class="btn btn-outline-primary no-print" data-bs-toggle="modal" data-bs-target="#modalDetail{{ membre.id }}" title="Voir détails">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="#" class="btn btn-outline-secondary no-print" data-bs-toggle="modal" data-bs-target="#modalEdit{{ membre.id }}" title="Modifier">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Style pour l'impression -->
+<style>
+    @page {
+        size: A4 portrait;
+        margin: 1cm;
+    }
+    
+    @media print {
+        body * {
+            visibility: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .printable-area, .printable-area * {
+            visibility: visible;
+        }
+        
+        .printable-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .no-print, .no-print * {
+            display: none !important;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12pt;
+        }
+        
+        .table th {
+            background-color: #f2f2f2 !important;
+            color: #000 !important;
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        .table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        
+        h4 {
+            color: #000 !important;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 16pt;
+        }
+        
+        /* En-tête personnalisé pour l'impression */
+        .print-header {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #000;
+            padding-bottom: 10px;
+        }
+        
+        .print-title {
+            font-size: 18pt;
+            font-weight: bold;
+        }
+        
+        .print-date {
+            font-size: 12pt;
+            margin-top: 5px;
+        }
+    }
+</style>
+
+<script>
+    document.getElementById('printButton').addEventListener('click', function() {
+        // Créer un en-tête d'impression temporaire
+        const printHeader = document.createElement('div');
+        printHeader.className = 'print-header no-screen';
+        printHeader.innerHTML = `
+            <div class="print-title">Liste des Membres - CBCA Vulumbi</div>
+            <div class="print-date">Imprimé le ${new Date().toLocaleDateString()}</div>
+        `;
+        
+        // Ajouter le style pour masquer l'en-tête à l'écran
+        const style = document.createElement('style');
+        style.innerHTML = `
+            .no-screen { display: none; }
+            @media print { .no-screen { display: block !important; } }
+        `;
+        
+        document.head.appendChild(style);
+        document.querySelector('.card-body').prepend(printHeader);
+        
+        window.print();
+        
+        // Nettoyer après l'impression
+        document.head.removeChild(style);
+        printHeader.remove();
+    });
+</script>
+
+{% endblock %}

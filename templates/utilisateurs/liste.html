@@ -1,0 +1,35 @@
+<!-- templates/utilisateurs/liste.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2 class="mb-3">Gestion des utilisateurs</h2>
+
+<a href="{{ url_for('ajouter_utilisateur') }}" class="btn btn-primary mb-4">Ajouter un utilisateur</a>
+
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Nom d'utilisateur</th>
+            
+            <th>Rôle</th>
+        >
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in users %}
+        <tr>
+            <td>{{ user.username }}</td>
+            
+            <td>{{ user.role }}</td>
+            
+            <td>
+                <a href="{{ url_for('modifier_utilisateur', id=user.id) }}" class="btn btn-sm btn-warning">Modifier</a>
+                <form action="{{ url_for('supprimer_utilisateur', id=user.id) }}" method="POST" style="display:inline-block;" onsubmit="return confirm('Confirmer la suppression ?')">
+                    <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

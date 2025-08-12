@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - CBCA Vulumbi{% endblock %}
+
+{% block css %}
+<style>
+    .cbca-hero {
+        background: linear-gradient(135deg, #e30613 0%, #a00511 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .cbca-hero::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: url("{{ url_for('static', filename='images/church-pattern.png') }}");
+        opacity: 0.1;
+    }
+    
+    .cbca-icon-circle {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        transition: all 0.3s ease;
+    }
+    
+    .cbca-card:hover .cbca-icon-circle {
+        transform: scale(1.1);
+        box-shadow: 0 5px 15px rgba(227, 6, 19, 0.3);
+    }
+    
+    .stats-card {
+        border-left: 4px solid #e30613;
+        transition: transform 0.3s;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .verse-section {
+        background: url("{{ url_for('static', filename='images/bible-bg.jpg') }}") center/cover;
+        position: relative;
+        color: white;
+    }
+    
+    .verse-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+    }
+    
+    .quick-actions .btn-action {
+        border-radius: 50px;
+        padding: 15px 25px;
+        font-weight: 600;
+        transition: all 0.3s;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="cbca-hero py-5 text-white mb-4">
+    <div class="container py-5 position-relative">
+        <div class="row align-items-center">
+            <div class="col-lg-8">
+                <h1 class="display-3 fw-bold mb-4">
+                    <i class="fas fa-hands-praying me-3"></i>Gestion des Engagements
+                </h1>
+                <p class="lead mb-4 fs-4">
+                    Système numérique de suivi des contributions des fidèles de la CBCA Vulumbi.<br>
+                    <span class="fw-bold d-inline-block mt-2">Transparence - Responsabilité - Communion</span>
+                </p>
+                <div class="d-flex flex-wrap gap-3 quick-actions">
+                    <a href="{{ url_for('ajouter_engagement') }}" class="btn btn-light btn-lg px-4 text-cbca fw-bold btn-action">
+                        <i class="fas fa-plus-circle me-2"></i>Nouvel Engagement
+                    </a>
+                    <a href="{{ url_for('liste_membres') }}" class="btn btn-outline-light btn-lg px-4 btn-action">
+                        <i class="fas fa-users me-2"></i>Voir les Membres
+                    </a>
+                    <a href="{{ url_for('liste_paiements') }}" class="btn btn-outline-light btn-lg px-4 btn-action">
+                        <i class="fas fa-hand-holding-usd me-2"></i>Paiements
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-4 d-none d-lg-block">
+                <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Illustration" class="img-fluid">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-4 bg-light">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body">
+                        <h5 class="text-muted">Membres</h5>
+                        <h2 class="text-cbca">{{ stats.total_membres }}</h2>
+                        <p class="mb-0 text-muted"><small>Total inscrits</small></p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body">
+                        <h5 class="text-muted">Engagements</h5>
+                        <h2 class="text-cbca">{{ stats.total_engagements }}</h2>
+                        <p class="mb-0 text-muted"><small>Total promesses</small></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="card stats-card h-100">
+                    <div class="card-body">
+                        <h5 class="text-muted">Paiements</h5>
+                        <h2 class="text-cbca">{{ stats.paiements_mois }}</h2>
+                        <p class="mb-0 text-muted"><small>Ce mois</small></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="fw-bold text-cbca">
+                <i class="fas fa-star-of-david me-2"></i>Nos Fonctionnalités
+            </h2>
+            <p class="lead text-muted">Découvrez comment notre système peut vous aider</p>
+            <div class="cbca-divider mx-auto bg-cbca" style="height: 3px; width: 80px;"></div>
+        </div>
+        <div class="row g-4">
+            <!-- Feature 1 -->
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm cbca-card">
+                    <div class="card-body text-center p-4">
+                        <div class="cbca-icon-circle bg-cbca text-white mb-4 mx-auto">
+                            <i class="fas fa-hand-holding-usd fa-2x"></i>
+                        </div>
+                        <h4 class="text-cbca mb-3">Suivi des Engagements</h4>
+                        <p class="mb-0 text-muted">Enregistrement et suivi précis de toutes les promesses de dons avec historique complet et notifications automatiques.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Feature 2 -->
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm cbca-card">
+                    <div class="card-body text-center p-4">
+                        <div class="cbca-icon-circle bg-cbca text-white mb-4 mx-auto">
+                            <i class="fas fa-mobile-alt fa-2x"></i>
+                        </div>
+                        <h4 class="text-cbca mb-3">Notifications</h4>
+                        <p class="mb-0 text-muted">Alertes SMS et emails pour les échéances approchantes et les paiements reçus.</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Feature 3 -->
+            <div class="col-md-4">
+                <div class="card h-100 border-0 shadow-sm cbca-card">
+                    <div class="card-body text-center p-4">
+                        <div class="cbca-icon-circle bg-cbca text-white mb-4 mx-auto">
+                            <i class="fas fa-chart-line fa-2x"></i>
+                        </div>
+                        <h4 class="text-cbca mb-3">Analyses</h4>
+                        <p class="mb-0 text-muted">Tableaux de bord interactifs avec visualisation des tendances et rapports exportables.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Bible Verse Section -->
+<section class="py-5 verse-section">
+    <div class="container text-center position-relative py-4">
+        <blockquote class="blockquote mb-0">
+            <i class="fas fa-quote-left text-white me-2 opacity-75"></i>
+            <span class="fst-italic fs-3 d-inline-block my-3">"Que chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ; car Dieu aime celui qui donne avec joie."</span>
+            <i class="fas fa-quote-right text-white ms-2 opacity-75"></i>
+            <footer class="blockquote-footer mt-3 fs-5 text-white">2 Corinthiens 9:7</footer>
+        </blockquote>
+    </div>
+</section>
+
+<!-- Recent Activity Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-cbca">
+                <i class="fas fa-history me-2"></i>Activité Récente
+            </h2>
+            <a href="#" class="btn btn-outline-cbca">Voir tout</a>
+        </div>
+        <div class="row g-4">
+            <!-- Vous pourriez ajouter ici une boucle pour afficher les dernières activités -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 text-cbca">
+                                <i class="fas fa-hand-holding-usd fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5>Nouveau paiement enregistré</h5>
+                                <p class="mb-1">Jean Kabila a payé 50$ pour l'engagement #123</p>
+                                <small class="text-muted">Il y a 2 heures</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Autre exemple d'activité -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex">
+                            <div class="flex-shrink-0 text-cbca">
+                                <i class="fas fa-user-plus fa-2x"></i>
+                            </div>
+                            <div class="flex-grow-1 ms-3">
+                                <h5>Nouveau membre</h5>
+                                <p class="mb-1">Sarah Mutesi a été ajoutée au système</p>
+                                <small class="text-muted">Hier à 15:30</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block js %}
+<script>
+    // Animation pour les cartes de statistiques
+    document.querySelectorAll('.stats-card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.boxShadow = '0 10px 20px rgba(0,0,0,0.1)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.boxShadow = 'none';
+        });
+    });
+    
+    // Vous pourriez ajouter ici des appels AJAX pour mettre à jour les stats en temps réel
+</script>
+{% endblock %}

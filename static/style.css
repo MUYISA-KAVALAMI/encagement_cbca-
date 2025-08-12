@@ -1,0 +1,118 @@
+/* CBCA Main Styles */
+body {
+    font-family: 'Segoe UI', 'Roboto', sans-serif;
+    background-color: var(--cbcagray);
+}
+
+/* CBCA Hero Section */
+.cbca-hero {
+    background-color: var(--cbcared);
+    background-image: linear-gradient(rgba(227, 6, 19, 0.9), rgba(227, 6, 19, 0.9)), 
+                      url('../images/cbca-pattern.png');
+    background-size: cover;
+    border-bottom: 5px solid white;
+}
+
+.cbca-hero-img {
+    border: 5px solid white;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+
+/* CBCA Cards */
+.cbca-card {
+    transition: all 0.3s ease;
+    border-radius: 10px;
+    border-top: 4px solid var(--cbcared);
+}
+
+.cbca-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+}
+
+.cbca-icon-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+}
+
+/* CBCA Divider */
+.cbca-divider {
+    width: 100px;
+    height: 3px;
+    background-color: var(--cbcared);
+    margin: 1rem auto;
+}
+
+/* Navigation */
+.navbar-cbca {
+    border-bottom: 3px solid white;
+}
+
+/* Buttons */
+.btn-cbca {
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .cbca-hero {
+        text-align: center;
+        padding: 2rem 0;
+    }
+    
+    .cbca-hero h1 {
+        font-size: 2.2rem;
+    }
+}
+
+/* Table styles */
+.table-responsive {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom-width: 1px;
+    font-weight: 600;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(227, 6, 19, 0.05);
+}
+
+/* Form styles */
+.form-control:focus {
+    border-color: var(--cbcared);
+    box-shadow: 0 0 0 0.25rem rgba(227, 6, 19, 0.25);
+}
+
+/* Card header */
+.card-header {
+    font-weight: 600;
+}
+
+/* Login page */
+.login-container {
+    max-width: 400px;
+    margin: 0 auto;
+    padding-top: 5rem;
+}
+
+.login-logo {
+    width: 120px;
+    margin-bottom: 2rem;
+}
