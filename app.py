@@ -362,7 +362,8 @@ def modifier_carte(id):
 def liste_engagements():
     from models import Engagement
     engagements = Engagement.query.order_by(Engagement.date_limite).all()
-    return render_template('engagements/liste.html', title="Engagements", engagements=engagements)
+    membres = Membre.query.order_by(Membre.id.desc()).all()
+    return render_template('engagements/liste.html', title="Engagements", engagements=engagements, membres=membres)
 
 @app.route('/engagements/ajouter', methods=['GET', 'POST'])
 @login_required

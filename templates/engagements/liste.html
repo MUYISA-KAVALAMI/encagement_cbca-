@@ -191,7 +191,44 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <!-- Contenu du modal inchangé -->
+          <div class="mb-3">
+            <label for="montant_total" class="form-label
+          ">Montant </label>
+            <input type="number" class="form-control" id="montant_total" name="montant_total"
+                   value="{{ engagement.montant_total }}" required>
+                   </div>
+          <div class="mb-3">
+            <label for="date_limite" class="form-label">Date Limite</label>
+            <input type="date" class="form-control" id="date_limite" name="date_limite"
+                   value="{{ engagement.date_limite.strftime('%Y-%m-%d') }}" required>
+                   </div>
+          <div class="mb-3">
+            <label for="membre" class="form-label">Membre</label>
+            <select class="form-select" id="membre" name="membre">
+              {% for membre in membres %}
+              <option value="{{ membre.id }}" {% if engagement.membre_id == membre.id %}selected{% endif %}>
+                {{ membre.cartebapteme.nom }}
+              </option>
+              {% endfor %}
+            </select>
+            </div>
+          <div class="mb-3">
+            <label for="note" class="form-label">Description</label>
+            <textarea class="form-control" value="{{ engagement.description }}" id="note" name="note" rows="3">{{ engagement.description }}</textarea>
+            </div>
+            </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Enregistrer</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          </div>
+          </form>
+          </div>
+          
+          
+         
+
+          
+          
         </div>
       </form>
     </div>
