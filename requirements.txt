@@ -95,10 +95,7 @@ sounddevice==0.5.2
 soundfile==0.13.1
 soxr==0.5.0.post1
 SQLAlchemy==2.0.41
-tensorboard==2.19.0
-tensorboard-data-server==0.7.2
 termcolor==3.1.0
-tf_keras==2.19.0
 threadpoolctl==3.6.0
 tomli==2.2.1
 twilio==9.6.3
