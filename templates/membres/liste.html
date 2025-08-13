@@ -43,7 +43,7 @@
                                 <a href="#" class="btn btn-outline-primary no-print" data-bs-toggle="modal" data-bs-target="#modalDetail{{ membre.id }}" title="Voir détails">
                                     <i class="fas fa-eye"></i>
                                 </a>
-                                <a href="#" class="btn btn-outline-secondary no-print" data-bs-toggle="modal" data-bs-target="#modalEdit{{ membre.id }}" title="Modifier">
+                                <a href="{{ url_for('modifier_membre', id=membre.id) }}" class="btn btn-outline-secondary no-print"  title="Modifier">
                                     <i class="fas fa-edit"></i>
                                 </a>
                             </div>

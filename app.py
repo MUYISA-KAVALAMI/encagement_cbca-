@@ -195,58 +195,41 @@ def ajouter_membre():
     groupes = ['Chorale', 'Jeunesse', 'Dames', 'Hommes', 'Enfants']
     return render_template('membres/ajouter.html', title="Ajouter un membre", groupes=groupes, cartes=cartes)
 
-@app.route('/membres/<int:id>/modifier', methods=['POST'])
+@app.route('/membres/modifier/<int:id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
 def modifier_membre(id):
-    from models import Membre
+    from models import Membre, CarteBapteme
     membre = Membre.query.get_or_404(id)
-    try:
-        nom = request.form.get('nom', '').strip()
-        telephone = request.form.get('telephone', '').strip()
-        sexe = request.form.get('sexe', '').strip()
-        if not nom or not telephone or not sexe:
-            flash("Nom, Téléphone et Sexe sont obligatoires", "danger")
+
+    cartes = CarteBapteme.query.order_by(CarteBapteme.nom).all()
+    groupes = ['Chorale', 'Jeunesse', 'Dames', 'Hommes', 'Enfants']
+
+    if request.method == 'POST':
+        try:
+            telephone = request.form.get('telephone', '').strip()
+            carte_id = request.form.get('carte')
+            groupe = request.form.get('groupe')
+            api_key = request.form.get('api')
+
+            if not telephone:
+                flash('Le Téléphone est obligatoire', 'danger')
+                return redirect(url_for('modifier_membre', id=id))
+            if not telephone_valide(telephone):
+                flash("Numéro de téléphone invalide. Exemple: +243970000000", 'warning')
+                return redirect(url_for('modifier_membre', id=id))
+
+            membre.telephone = telephone
+            membre.carte_id = int(carte_id) if carte_id else None
+            membre.groupe = groupe
+            membre.apikey_callmebot = api_key
+            db.session.commit()
+            flash('Membre modifié avec succès', 'success')
             return redirect(url_for('liste_membres'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Erreur lors de la modification du membre: {str(e)}", 'danger')
 
-        if not telephone_valide(telephone):
-            flash("Numéro de téléphone invalide", "warning")
-            return redirect(url_for('liste_membres'))
-
-        membre.nom = nom
-        membre.telephone = telephone
-        membre.sexe = sexe
-        membre.adresse = request.form.get('adresse', '').strip()
-        membre.groupe = request.form.get('groupe', '').strip()
-        membre.apikey_callmebot = request.form.get('api', '').strip()
-
-        date_naissance = request.form.get('date_naissance', '').strip()
-        if date_naissance:
-            try:
-                membre.date_naissance = datetime.strptime(date_naissance, '%Y-%m-%d').date()
-            except ValueError:
-                flash("Format de date invalide", "danger")
-                return redirect(url_for('liste_membres'))
-
-        if 'photo' in request.files:
-            photo = request.files['photo']
-            if photo and photo.filename and allowed_file(photo.filename):
-                if membre.photo:
-                    try:
-                        os.remove(os.path.join(app.config['UPLOAD_FOLDER'], membre.photo))
-                    except Exception:
-                        pass
-                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-                photo_filename = secure_filename(photo.filename)
-                photo.save(os.path.join(app.config['UPLOAD_FOLDER'], photo_filename))
-                membre.photo = photo_filename
-
-        db.session.commit()
-        flash("Membre modifié avec succès !", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"Erreur lors de la modification : {str(e)}", "danger")
-    return redirect(url_for('liste_membres'))
+    return render_template('membres/modifier.html', title="Modifier membre", membre=membre, groupes=groupes, cartes=cartes)
 
 @app.route('/membres/supprimer/<int:id>', methods=['POST'])
 def supprimer_membre(id):
