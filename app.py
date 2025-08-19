@@ -215,7 +215,8 @@ def ajouter_membre():
                         f"Compte utilisateur créé :\n"
                         f"Identifiant : {nouveau_membre.telephone}\n"
                         f"Mot de passe : {mot_de_passe}\n"
-                        f"Vous pouvez vous connecter pour souscrire et suivre vos opérations."
+                        f"Vous pouvez vous connecter ici https://encagement-cbca.onrender.com pour souscrire et suivre vos opérations."
+        
                     )
                     envoyer_whatsapp(nouveau_membre.telephone, nouveau_membre.apikey_callmebot, message)
             else:
