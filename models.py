@@ -43,8 +43,9 @@ class Membre(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     cate_id = db.Column(db.Integer, db.ForeignKey('cartebapteme.id'), nullable=False)
     # Relation avec les engagements
-    engagements = db.relationship('Engagement', backref='membre', lazy=True)
-
+    engagements = db.relationship('Engagement', backref='membre', lazy=True, cascade="all, delete-orphan")
+    # Relation avec les notifications
+    notifications = db.relationship('Notification', backref='membre', lazy=True, cascade="all, delete-orphan")
 
 class Engagement(db.Model):
     __tablename__ = 'engagements'
@@ -56,7 +57,8 @@ class Engagement(db.Model):
     description = db.Column(db.String(200))
     statut = db.Column(db.String(20), default='En cours')
 
-    paiements = db.relationship('Paiement', backref='engagement', lazy=True)
+    paiements = db.relationship('Paiement', backref='engagement', lazy=True, cascade="all, delete-orphan")
+    notifications = db.relationship('Notification', backref='engagement', lazy=True, cascade="all, delete-orphan")
 
     def montant_restant(self):
         """Montant restant à ce jour"""
@@ -78,9 +80,6 @@ class Notification(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     membre_id = db.Column(db.Integer, db.ForeignKey('membres.id'), nullable=False)
     engagement_id = db.Column(db.Integer, db.ForeignKey('engagements.id'), nullable=True)
+    message = db.Column(db.String(255))
+    statut = db.Column(db.String(20), default='en attente')
     date_envoi = db.Column(db.DateTime, default=datetime.utcnow)
-    statut = db.Column(db.String(20), default='envoyé')  # ou 'échoué'
-    message = db.Column(db.Text)
-
-    membre = db.relationship('Membre', backref='notifications')
-    engagement = db.relationship('Engagement', backref='notifications')

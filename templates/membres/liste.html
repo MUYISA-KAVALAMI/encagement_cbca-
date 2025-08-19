@@ -46,6 +46,9 @@
                                 <a href="{{ url_for('modifier_membre', id=membre.id) }}" class="btn btn-outline-secondary no-print"  title="Modifier">
                                     <i class="fas fa-edit"></i>
                                 </a>
+                                <form action="{{ url_for('supprimer_membre', id=membre.id) }}" method="post" style="display:inline;" onsubmit="return confirm('Supprimer ce membre ? Cette action est irréversible !');">
+                                    <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                                </form>
                             </div>
                         </td>
                     </tr>

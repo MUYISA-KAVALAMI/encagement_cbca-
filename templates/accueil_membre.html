@@ -1,0 +1,35 @@
+<!-- templates/accueil_membre.html -->
+{% extends "base.html" %}
+{% block content %}
+<h2>Bienvenue {{ membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre }} !</h2>
+
+<p>Voici un aperçu de vos derniers engagements et paiements.</p>
+
+<h4>Mes 3 derniers engagements</h4>
+<ul>
+    {% for e in engagements %}
+        <li>
+            {{ e.description or "Sans description" }} :
+            {{ e.montant_total }} $ à payer avant le {{ e.date_limite.strftime('%d/%m/%Y') }}
+            (Statut : {{ e.statut or "en cours" }})
+        </li>
+    {% else %}
+        <li>Aucun engagement trouvé.</li>
+    {% endfor %}
+</ul>
+
+<h4>Mes 3 derniers paiements</h4>
+<ul>
+    {% for p in paiements %}
+        <li>
+            {{ p.montant }} $ payé le {{ p.date_paiement.strftime('%d/%m/%Y') }}
+            (Engagement du {{ p.engagement.date_limite.strftime('%d/%m/%Y') }})
+        </li>
+    {% else %}
+        <li>Aucun paiement trouvé.</li>
+    {% endfor %}
+</ul>
+
+<a href="{{ url_for('mes_engagements') }}" class="btn btn-primary">Voir tous mes engagements</a>
+<a href="{{ url_for('souscrire_engagement_membre') }}" class="btn btn-success">Souscrire un engagement</a>
+{% endblock %}

@@ -30,6 +30,10 @@
                             <label for="date_paiement" class="form-label">Date du paiement</label>
                             <input type="date" id="date_paiement" name="date_paiement" class="form-control" value="{{ date.today() }}">
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Reste à payer</label>
+                            <input type="text" id="reste_a_payer" class="form-control" readonly>
+                        </div>
                         <div class="text-end mt-4">
                             <a href="{{ url_for('liste_paiements') }}" class="btn btn-outline-secondary">
                                 <i class="fas fa-arrow-left me-1"></i>Retour
@@ -37,9 +41,11 @@
                             <button type="submit" class="btn btn-cbca">
                                 <i class="fas fa-save me-1"></i>Enregistrer
                             </button>
-                            <button type="button" id="printReceiptBtn" class="btn btn-primary" disabled>
-                                <i class="fas fa-print me-1"></i>Imprimer le reçu
-                            </button>
+                            {# 
+                            <a href="{{ url_for('imprimer_recu', paiement_id=paiement.id) }}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-print"></i> Imprimer le reçu
+                            </a>
+                            #}
                         </div>
                     </form>
                 </div>
@@ -149,38 +155,31 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        const engagements = {{ engagements_data|tojson }};
+        const selectEngagement = document.getElementById('engagement_id');
+        const montantInput = document.getElementById('montant');
+        const resteInput = document.getElementById('reste_a_payer');
+
+        selectEngagement.addEventListener('change', function() {
+            const selectedId = parseInt(this.value);
+            const engagement = engagements.find(e => e.id === selectedId);
+            if (engagement) {
+                resteInput.value = (engagement.montant_total - engagement.montant_paye).toFixed(2) + ' $';
+                montantInput.max = (engagement.montant_total - engagement.montant_paye).toFixed(2);
+            } else {
+                resteInput.value = '';
+                montantInput.max = '';
+            }
+        });
+
+        montantInput.addEventListener('input', function() {
+            if (parseFloat(this.value) > parseFloat(this.max)) {
+                this.value = this.max;
+            }
+        });
+        
         const form = document.getElementById('paiementForm');
         const printBtn = document.getElementById('printReceiptBtn');
-        
-        // Activer le bouton d'impression après soumission
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Simuler l'envoi du formulaire (dans une vraie app, vous auriez une réponse du serveur)
-            setTimeout(() => {
-                // Remplir les données du reçu
-                const selectedOption = document.querySelector('#engagement_id option:checked');
-                if (selectedOption) {
-                    const membreText = selectedOption.textContent.split('–')[0].trim();
-                    const montant = document.getElementById('montant').value;
-                    const datePaiement = document.getElementById('date_paiement').value;
-                    
-                    document.getElementById('receiptMembre').textContent = membreText;
-                    document.getElementById('receiptMontant').textContent = parseFloat(montant).toFixed(2) + ' $';
-                    document.getElementById('receiptDate').textContent = new Date(datePaiement).toLocaleDateString('fr-FR');
-                    
-                    // Ces valeurs devraient normalement venir de la réponse du serveur
-                    document.getElementById('receiptEngagementDate').textContent = selectedOption.textContent.match(/\((.*?)\)/)[1];
-                    document.getElementById('receiptTotalEngage').textContent = selectedOption.textContent.split('–')[1].split('$')[0].trim() + ' $';
-                    
-                    const reste = parseFloat(selectedOption.textContent.split('–')[1].split('$')[0].trim()) - parseFloat(montant);
-                    document.getElementById('receiptReste').textContent = reste.toFixed(2) + ' $';
-                    
-                    // Activer le bouton d'impression
-                    printBtn.disabled = false;
-                }
-            }, 500);
-        });
         
         // Imprimer le reçu
         printBtn.addEventListener('click', function() {

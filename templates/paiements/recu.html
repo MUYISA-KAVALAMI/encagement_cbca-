@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="receipt-container p-4">
+    <div class="text-center mb-4">
+        <h3>CBCA VULUMBI</h3>
+        <h5>Reçu de Paiement</h5>
+        <p>Date: {{ paiement.date_paiement.strftime('%d/%m/%Y') }}</p>
+    </div>
+    <div class="receipt-details">
+        <div class="row mb-2">
+            <div class="col-6"><strong>Membre:</strong></div>
+            <div class="col-6">{{ paiement.engagement.membre.cartebapteme.nom }}</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Montant payé:</strong></div>
+            <div class="col-6">{{ paiement.montant }} $</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Pour l'engagement du:</strong></div>
+            <div class="col-6">{{ paiement.engagement.date_limite.strftime('%d/%m/%Y') }}</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Montant total engagé:</strong></div>
+            <div class="col-6">{{ paiement.engagement.montant_total }} $</div>
+        </div>
+        <div class="row mb-2">
+            <div class="col-6"><strong>Reste à payer:</strong></div>
+            <div class="col-6">{{ paiement.engagement.montant_restant() }} $</div>
+        </div>
+    </div>
+    <div class="signature mt-5 pt-4">
+        <div class="row">
+            <div class="col-6 text-center">
+                <p>Signature du membre</p>
+                <div class="signature-line"></div>
+            </div>
+            <div class="col-6 text-center">
+                <p>Signature du trésorier</p>
+                <div class="signature-line"></div>
+            </div>
+        </div>
+    </div>
+    <div class="footer mt-4 pt-2 text-center">
+        <small>Merci pour votre contribution à l'église CBCA Vulumbi</small>
+    </div>
+    <div class="text-center mt-4">
+        <button onclick="window.print()" class="btn btn-primary">Imprimer ce reçu</button>
+    </div>
+</div>
+{% endblock %}

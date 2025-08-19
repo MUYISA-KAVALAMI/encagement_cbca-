@@ -26,7 +26,7 @@
 <body>
 <nav class="navbar navbar-expand-lg navbar-dark navbar-cbca shadow">
     <div class="container">
-        <a class="navbar-brand" href="{{ url_for('accueil') }}">
+        <a class="navbar-brand" href="{% if current_user.is_authenticated and current_user.role == 'membre' %}{{ url_for('accueil_membre') }}{% else %}{{ url_for('accueil') }}{% endif %}">
             <img src="{{ url_for('static', filename='logo.JPG') }}" alt="Logo CBCA" height="40" class="me-2">
             <span class="d-none d-md-inline">CBCA VULUMBI</span>
         </a>
@@ -36,37 +36,53 @@
 
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint == 'accueil' %}active{% endif %}" href="{{ url_for('accueil') }}">
-                        <i class="fas fa-chart-bar me-1"></i> Tableau de bord
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_membres') %}active{% endif %}" href="{{ url_for('liste_membres') }}">
-                        <i class="fas fa-users me-1"></i> Membres
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_engagements') %}active{% endif %}" href="{{ url_for('liste_engagements') }}">
-                        <i class="fas fa-handshake me-1"></i> Engagements
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_paiements') %}active{% endif %}" href="{{ url_for('liste_paiements') }}">
-                        <i class="fas fa-money-check-alt me-1"></i> Paiements
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_carte') %}active{% endif %}" href="{{ url_for('liste_carte') }}">
-                        <i class="fas fa-id-card me-1"></i> Carte Baptême
-                    </a>
-                </li>
                 {% if current_user.is_authenticated and current_user.role == 'admin' %}
-                <li class="nav-item">
-                    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_utilisateurs') %}active{% endif %}" href="{{ url_for('liste_utilisateurs') }}">
-                        <i class="fas fa-user-shield me-1"></i> Utilisateurs
-                    </a>
-                </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'accueil' %}active{% endif %}" href="{{ url_for('accueil') }}">
+                            <i class="fas fa-chart-bar me-1"></i> Tableau de bord
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_membres') %}active{% endif %}" href="{{ url_for('liste_membres') }}">
+                            <i class="fas fa-users me-1"></i> Membres
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_engagements') %}active{% endif %}" href="{{ url_for('liste_engagements') }}">
+                            <i class="fas fa-handshake me-1"></i> Engagements
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_paiements') %}active{% endif %}" href="{{ url_for('liste_paiements') }}">
+                            <i class="fas fa-money-check-alt me-1"></i> Paiements
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_carte') %}active{% endif %}" href="{{ url_for('liste_carte') }}">
+                            <i class="fas fa-id-card me-1"></i> Carte Baptême
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_utilisateurs') %}active{% endif %}" href="{{ url_for('liste_utilisateurs') }}">
+                            <i class="fas fa-user-shield me-1"></i> Utilisateurs
+                        </a>
+                    </li>
+                {% elif current_user.is_authenticated and current_user.role == 'membre' %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'accueil_membre' %}active{% endif %}" href="{{ url_for('accueil_membre') }}">
+                            <i class="fas fa-home me-1"></i> Accueil membre
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'mes_engagements' %}active{% endif %}" href="{{ url_for('mes_engagements') }}">
+                            <i class="fas fa-handshake me-1"></i> Mes engagements
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'souscrire_engagement_membre' %}active{% endif %}" href="{{ url_for('souscrire_engagement_membre') }}">
+                            <i class="fas fa-plus-circle me-1"></i> Souscrire un engagement
+                        </a>
+                    </li>
                 {% endif %}
             </ul>
             <ul class="navbar-nav">

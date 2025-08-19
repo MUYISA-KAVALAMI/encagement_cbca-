@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card card-cbca p-4">
+            <h3 class="mb-4 text-center">Souscrire un engagement</h3>
+            <form method="post">
+                <div class="mb-3">
+                    <label for="montant" class="form-label">Montant ($)</label>
+                    <input type="number" name="montant" id="montant" class="form-control" step="0.01" required>
+                </div>
+                <div class="mb-3">
+                    <label for="date_limite" class="form-label">Date limite</label>
+                    <input type="date" name="date_limite" id="date_limite" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description (optionnel)</label>
+                    <input type="text" name="description" id="description" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-cbca w-100">Souscrire</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

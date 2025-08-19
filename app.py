@@ -1,5 +1,7 @@
 # app.py
 import os, re
+import random
+import string
 from datetime import datetime, timedelta, date
 
 from flask import Flask, render_template, request, redirect, url_for, flash
@@ -112,6 +114,8 @@ def login():
             user.last_login = datetime.utcnow()
             db.session.commit()
             flash('Connexion réussie!', 'success')
+            if user.role == 'membre':
+                return redirect(url_for('accueil_membre'))
             return redirect(url_for('accueil'))
         flash('Identifiant ou mot de passe incorrect', 'danger')
     return render_template('login.html', title="Connexion")
@@ -185,8 +189,37 @@ def ajouter_membre():
             )
             db.session.add(nouveau_membre)
             db.session.commit()
-            flash('Membre ajouté avec succès!', 'success')
-            return redirect(url_for('liste_membres'))
+
+            from models import User
+
+            # Vérifier si un utilisateur existe déjà avec ce téléphone
+            if not User.query.filter_by(username=nouveau_membre.telephone).first():
+                lettres = ''.join(random.choices(string.ascii_uppercase, k=2))
+                chiffres = ''.join(random.choices(string.digits, k=4))
+                mot_de_passe = lettres + chiffres
+
+                nouvel_user = User(
+                    username=nouveau_membre.telephone,
+                    role='membre'
+                )
+                nouvel_user.set_password(mot_de_passe)
+                db.session.add(nouvel_user)
+                db.session.commit()
+
+                # Envoi de la notification WhatsApp avec le mot de passe
+                if nouveau_membre.apikey_callmebot and nouveau_membre.telephone:
+                    nom = nouveau_membre.cartebapteme.nom if nouveau_membre.cartebapteme else nouveau_membre.code_membre
+                    message = (
+                        f"Bienvenue {nom} à la CBCA VULUMBI !\n"
+                        f"Votre inscription a été enregistrée avec succès.\n"
+                        f"Compte utilisateur créé :\n"
+                        f"Identifiant : {nouveau_membre.telephone}\n"
+                        f"Mot de passe : {mot_de_passe}\n"
+                        f"Vous pouvez vous connecter pour souscrire et suivre vos opérations."
+                    )
+                    envoyer_whatsapp(nouveau_membre.telephone, nouveau_membre.apikey_callmebot, message)
+            else:
+                flash("Un utilisateur existe déjà avec ce numéro. Aucun nouveau compte utilisateur créé.", "warning")
         except Exception as e:
             db.session.rollback()
             flash(f"Erreur lors de l'ajout du membre: {str(e)}", 'danger')
@@ -232,12 +265,22 @@ def modifier_membre(id):
     return render_template('membres/modifier.html', title="Modifier membre", membre=membre, groupes=groupes, cartes=cartes)
 
 @app.route('/membres/supprimer/<int:id>', methods=['POST'])
+@login_required
+@admin_required
 def supprimer_membre(id):
-    
+    from models import Membre, User
     membre = Membre.query.get_or_404(id)
-    db.session.delete(membre)
-    db.session.commit()
-    flash('Membre supprimé avec succès', 'success')
+    try:
+        # Supprimer l'utilisateur lié si existe
+        user = User.query.filter_by(username=membre.telephone).first()
+        if user:
+            db.session.delete(user)
+        db.session.delete(membre)
+        db.session.commit()
+        flash('Membre (et utilisateur lié) supprimé avec succès', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Erreur lors de la suppression du membre: {str(e)}", "danger")
     return redirect(url_for('liste_membres'))
 
 @app.route('/membres/<int:id>')
@@ -527,12 +570,20 @@ def ajouter_paiement():
             db.session.rollback()
             flash(f"Erreur: {str(e)}", "danger")
 
-    engagements = Engagement.query.order_by(Engagement.date_limite).all()
-    return render_template('paiements/ajouter.html', 
-        title="Ajouter un paiement", 
-        engagements=engagements, 
-        date=date,
-        receipt_data=None
+    engagements = Engagement.query.all()
+    engagements_data = [
+        {
+            "id": e.id,
+            "montant_total": e.montant_total,
+            "montant_paye": sum(p.montant for p in e.paiements)
+        }
+        for e in engagements
+    ]
+    return render_template(
+        'paiements/ajouter.html',
+        engagements=engagements,
+        engagements_data=engagements_data,
+        date=date  # <-- Ajoute ceci
     )
 @app.route('/paiements/<int:id>/modifier', methods=['POST'])
 @login_required
@@ -561,6 +612,14 @@ def modifier_paiement(id):
         flash(f"Erreur : {str(e)}", "danger")
     return redirect(url_for('liste_paiements'))
 
+@app.route('/paiements/recu/<int:paiement_id>')
+@login_required
+@admin_required
+def imprimer_recu(paiement_id):
+    from models import Paiement
+    paiement = Paiement.query.get_or_404(paiement_id)
+    return render_template('paiements/recu.html', paiement=paiement)
+
 # -----------------------
 # Notifications
 # -----------------------
@@ -584,7 +643,7 @@ def notifier_membre_engagement(id):
         ).scalar() or 0
         
         # Calcul du reste à payer
-        reste_a_payer = engagement.montant_total - total_paye
+        reste_a_payer = engagement.montant
         
         # Construction du message détaillé
         message = (
@@ -701,6 +760,80 @@ def supprimer_utilisateur(id):
         db.session.rollback()
         flash(f"Erreur : {str(e)}", "danger")
     return redirect(url_for('liste_utilisateurs'))
+
+@app.route('/mes-engagements/souscrire', methods=['GET', 'POST'])
+@login_required
+@role_required('membre')
+def souscrire_engagement_membre():
+    from models import Engagement, Membre
+    membre = Membre.query.filter_by(telephone=current_user.username).first()
+    if not membre:
+        flash("Votre profil membre n'est pas trouvé.", "danger")
+        return redirect(url_for('accueil_membre'))
+
+    if request.method == 'POST':
+        montant_str = request.form.get('montant')
+        date_str = request.form.get('date_limite')
+        description = request.form.get('description', '').strip()
+
+        try:
+            montant = float(montant_str)
+            if montant <= 0:
+                raise ValueError("Montant invalide")
+        except Exception:
+            flash("Le montant doit être un nombre positif", "warning")
+            return redirect(url_for('souscrire_engagement_membre'))
+
+        try:
+            date_limite = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except Exception:
+            flash("Format de date incorrect", "danger")
+            return redirect(url_for('souscrire_engagement_membre'))
+
+        nouvel_engagement = Engagement(
+            membre_id=membre.id,
+            montant_total=montant,
+            date_limite=date_limite,
+            description=description
+        )
+        db.session.add(nouvel_engagement)
+        db.session.commit()
+
+        # Notification WhatsApp
+        if membre.apikey_callmebot:
+            nom = membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre
+            message = (
+                f"Bonjour {nom}, votre engagement de {montant:.2f}$ a été enregistré. "
+                f"Date limite : {date_limite.strftime('%d/%m/%Y')}."
+            )
+            envoyer_whatsapp(membre.telephone, membre.apikey_callmebot, message)
+
+        flash("Engagement souscrit avec succès !", "success")
+        return redirect(url_for('mes_engagements'))
+
+    return render_template('engagements/souscrire_membre.html', title="Souscrire un engagement")
+
+@app.route('/accueil-membre')
+@login_required
+@role_required('membre')
+def accueil_membre():
+    membre = Membre.query.filter_by(telephone=current_user.username).first()
+    engagements = []
+    paiements = []
+    if membre:
+        engagements = Engagement.query.filter_by(membre_id=membre.id).order_by(Engagement.date_limite.desc()).limit(3).all()
+        paiements = Paiement.query.join(Engagement).filter(Engagement.membre_id == membre.id).order_by(Paiement.date_paiement.desc()).limit(3).all()
+    return render_template('accueil_membre.html', membre=membre, engagements=engagements, paiements=paiements, title="Mon espace membre")
+
+@app.route('/mes-engagements')
+@login_required
+@role_required('membre')
+def mes_engagements():
+    from models import Engagement, Membre
+    membre = Membre.query.filter_by(telephone=current_user.username).first()
+    engagements = Engagement.query.filter_by(membre_id=membre.id).order_by(Engagement.date_limite).all()
+    return render_template('engagements/mes_engagements.html', title="Mes engagements", engagements=engagements)
+
 # -----------------------
 # Init DB + run
 # -----------------------
