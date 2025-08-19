@@ -629,29 +629,25 @@ def test_job():
     from tasks import notifier_engagements_proches
     notifier_engagements_proches()
     return "✅ Job exécuté manuellement"
-
 @app.route('/notifier/engagement/<int:id>', methods=['POST'])
 @login_required
 def notifier_membre_engagement(id):
-    from models import Engagement, Paiement
+    from models import Engagement, Notification
     engagement = Engagement.query.get_or_404(id)
     membre = engagement.membre
-    
+
     if membre and membre.apikey_callmebot and membre.telephone:
         # Calcul du montant déjà payé
-        total_paye = db.session.query(db.func.sum(Paiement.montant)).filter(
-            Paiement.engagement_id == engagement.id
-        ).scalar() or 0
-        
-        # Calcul du reste à payer
-        reste_a_payer = engagement.montant
-        
-        # Construction du message détaillé
+        total_paye = sum(p.montant for p in engagement.paiements)
+        reste_a_payer = engagement.montant_restant()
+
+        # Construction du message
+        nom_affiche = membre.cartebapteme.nom if membre.cartebapteme and membre.cartebapteme.nom else membre.code_membre
         message = (
             f"*CBCA VULUMBI - RAPPEL D'ENGAGEMENT*\n\n"
-            f"Cher(e) *{membre.cartebapteme.nom or membre.code_membre}*,\n\n"
+            f"Cher(e) *{nom_affiche}*,\n\n"
             f"Vous avez souscrit un engagement de *{engagement.montant_total:.2f}$* "
-            f"avec la date d'échéance  *{engagement.date_limite.strftime('%d/%m/%Y')}*.\n\n"
+            f"avec une date d'échéance fixée au *{engagement.date_limite.strftime('%d/%m/%Y')}*.\n\n"
             f"📊 *État de paiement* :\n"
             f"- Montant total engagé : {engagement.montant_total:.2f}$\n"
             f"- Montant déjà payé : {total_paye:.2f}$\n"
@@ -659,14 +655,27 @@ def notifier_membre_engagement(id):
             f"ℹ️ Pour toute question, contactez le trésorier au +243976543210.\n\n"
             f"*Merci pour votre contribution à notre communauté!*"
         )
-        
-        # Envoi du message
+
+        # Envoi du message via CallMeBot
         envoyer_whatsapp(membre.telephone, membre.apikey_callmebot, message)
-        flash("Notification détaillée envoyée avec succès.", "success")
+
+        # Enregistrement de la notification
+        nouvelle_notification = Notification(
+            membre_id=membre.id,
+            engagement_id=engagement.id,
+            message=message,
+            statut='envoyée',
+            date_envoi=datetime.utcnow()
+        )
+        db.session.add(nouvelle_notification)
+        db.session.commit()
+
+        flash("Notification envoyée avec succès.", "success")
     else:
-        flash("Notification impossible - vérifiez les coordonnées du membre.", "warning")
-    
+        flash("Notification impossible : coordonnées du membre incomplètes.", "warning")
+
     return redirect(url_for('liste_engagements'))
+
 
 @app.route('/notifier/tous', methods=['GET'])
 @login_required
