@@ -36,37 +36,61 @@
 
         <div class="collapse navbar-collapse" id="navbarContent">
             <ul class="navbar-nav me-auto">
-                {% if current_user.is_authenticated and current_user.role == 'admin' %}
+                {% if current_user.is_authenticated and  (current_user.role == 'admin' or current_user.role == 'secretaire' or current_user.role == 'caissier' or current_user.role == 'comptable' )  %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'accueil' %}active{% endif %}" href="{{ url_for('accueil') }}">
                             <i class="fas fa-chart-bar me-1"></i> Tableau de bord
                         </a>
                     </li>
+                    
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_membres') %}active{% endif %}" href="{{ url_for('liste_membres') }}">
                             <i class="fas fa-users me-1"></i> Membres
                         </a>
                     </li>
+                    {% if  current_user.role == 'admin' or current_user.role == 'comptable' or current_user.role == 'caissier'%}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_engagements') %}active{% endif %}" href="{{ url_for('liste_engagements') }}">
                             <i class="fas fa-handshake me-1"></i> Engagements
                         </a>
                     </li>
+                    {% endif %}
+
+                    {% if  current_user.role == 'admin' or current_user.role == 'caissier' or current_user.role=='comptable'%}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_paiements') %}active{% endif %}" href="{{ url_for('liste_paiements') }}">
                             <i class="fas fa-money-check-alt me-1"></i> Paiements
                         </a>
                     </li>
+                    {% endif %}
+                    {% if current_user.role == 'admin' or current_user.role == 'comptable' or current_user.role == 'caissier' %}
+        <li class="nav-item">
+            <a class="nav-link {% if request.endpoint and request.endpoint.startswith('etat_engagements') %}active{% endif %}" href="{{ url_for('etat_engagements') }}">
+                <i class="fas fa-chart-pie me-1"></i> Rapport desengagements
+            </a>
+        </li>
+        {% endif %}
+        {% if current_user.role == 'admin' or current_user.role == 'comptable' or current_user.role == 'caissier' %}
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint and request.endpoint.startswith('statistiques_annuelles') %}active{% endif %}" href="{{ url_for('statistiques_annuelles') }}">
+        <i class="fas fa-chart-line me-1"></i> Statistiques
+    </a>
+</li>
+{% endif %}
+                    {% if  current_user.role == 'admin' or current_user.role == 'secretaire' %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_carte') %}active{% endif %}" href="{{ url_for('liste_carte') }}">
                             <i class="fas fa-id-card me-1"></i> Carte Baptême
                         </a>
                     </li>
+                    {% endif %}
+                    {% if  current_user.role == 'admin'%}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and request.endpoint.startswith('liste_utilisateurs') %}active{% endif %}" href="{{ url_for('liste_utilisateurs') }}">
                             <i class="fas fa-user-shield me-1"></i> Utilisateurs
                         </a>
                     </li>
+                    {% endif %}
                 {% elif current_user.is_authenticated and current_user.role == 'membre' %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint == 'accueil_membre' %}active{% endif %}" href="{{ url_for('accueil_membre') }}">

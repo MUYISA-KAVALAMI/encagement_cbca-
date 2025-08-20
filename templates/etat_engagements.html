@@ -1,0 +1,396 @@
+{% extends "base.html" %}
+
+{% block title %}État des Engagements - CBCA Vulumbi{% endblock %}
+
+{% block css %}
+<style>
+    .status-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+        height: 100%;
+    }
+    
+    .status-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    
+    .card-header {
+        border-top-left-radius: 10px !important;
+        border-top-right-radius: 10px !important;
+        font-weight: 600;
+    }
+    
+    .card-a-jour {
+        border-top: 4px solid #28a745;
+    }
+    
+    .card-a-jour .card-header {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .card-en-cours {
+        border-top: 4px solid #ffc107;
+    }
+    
+    .card-en-cours .card-header {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    
+    .card-sans-engagement {
+        border-top: 4px solid #6c757d;
+    }
+    
+    .card-sans-engagement .card-header {
+        background-color: #e2e3e5;
+        color: #383d41;
+    }
+    
+    .membre-item {
+        border-left: 3px solid transparent;
+        transition: all 0.2s;
+    }
+    
+    .membre-a-jour {
+        border-left-color: #28a745;
+    }
+    
+    .membre-en-cours {
+        border-left-color: #ffc107;
+    }
+    
+    .membre-sans-engagement {
+        border-left-color: #6c757d;
+    }
+    
+    .membre-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .badge-statut {
+        font-size: 0.8em;
+        padding: 0.4em 0.6em;
+    }
+    
+    .search-box {
+        max-width: 300px;
+    }
+    
+    .table-responsive {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-cbca">
+            <i class="fas fa-chart-pie me-2"></i>État des Engagements des Membres
+        </h1>
+        <div>
+            <input type="text" id="searchInput" class="form-control search-box" placeholder="Rechercher un membre...">
+        </div>
+    </div>
+
+    <!-- Cartes de statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card status-card card-a-jour">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-check-circle me-2"></i>À jour</span>
+                    <span class="badge bg-success rounded-pill">{{ membres_a_jour|length }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Membres ayant honoré tous leurs engagements.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card status-card card-en-cours">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-clock me-2"></i>Engagements en cours</span>
+                    <span class="badge bg-warning rounded-pill">{{ membres_en_cours|length }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Membres avec des engagements non encore complètement honorés.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card status-card card-sans-engagement">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-minus-circle me-2"></i>Sans engagement</span>
+                    <span class="badge bg-secondary rounded-pill">{{ membres_sans_engagement|length }}</span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">Membres n'ayant souscrit à aucun engagement.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Détails des membres à jour -->
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-check-circle me-2"></i>Membres à jour de leurs paiements
+                <span class="badge bg-light text-success ms-2">{{ membres_a_jour|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if membres_a_jour %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Téléphone</th>
+                            <th>Groupe</th>
+                            <th>Engagements honorés</th>
+                            <th class="no-print">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for membre in membres_a_jour %}
+                        <tr class="membre-item membre-a-jour">
+                            <td>{{ membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre }}</td>
+                            <td>{{ membre.telephone }}</td>
+                            <td>{{ membre.groupe or '-' }}</td>
+                            <td>{{ membre.engagements|length }}</td>
+                            <td class="no-print">
+                                <a href="{{ url_for('detail_membre', id=membre.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> Détails
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                <p class="text-muted">Aucun membre n'est à jour de ses paiements.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Détails des membres avec engagements en cours -->
+    <div class="card mb-4">
+        <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0">
+                <i class="fas fa-clock me-2"></i>Membres avec engagements en cours
+                <span class="badge bg-light text-warning ms-2">{{ membres_en_cours|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if membres_en_cours %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Téléphone</th>
+                            <th>Groupe</th>
+                            <th>Engagements</th>
+                            <th>Montant restant</th>
+                            {% if current_user.role in ['admin', 'comptable'] %}
+                            <th class="no-print">Actions</th>
+                            {% endif %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for membre in membres_en_cours %}
+                        <tr class="membre-item membre-en-cours">
+                            <td>{{ membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre }}</td>
+                            <td>{{ membre.telephone }}</td>
+                            <td>{{ membre.groupe or '-' }}</td>
+                            <td>{{ membre.engagements|length }}</td>
+                            <td>
+                                {% set total_restant = namespace(value=0) %}
+                                {% for engagement in membre.engagements %}
+                                    {% set total_restant.value = total_restant.value + engagement.montant_restant() %}
+                                {% endfor %}
+                                <span class="fw-bold text-danger">{{ total_restant.value|round(2) }} $</span>
+                            </td>
+                            <td class="no-print">
+                                {% if current_user.role in ['admin', 'comptable'] %}
+                                <button class="btn btn-sm btn-outline-warning" data-bs-toggle="modal" data-bs-target="#notifierModal{{ membre.id }}">
+                                    <i class="fas fa-bell"></i> Notifier
+                                </button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-clock fa-3x text-warning mb-3"></i>
+                <p class="text-muted">Aucun membre n'a d'engagements en cours.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Détails des membres sans engagement -->
+    <div class="card mb-4">
+        <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-minus-circle me-2"></i>Membres sans engagement
+                <span class="badge bg-light text-secondary ms-2">{{ membres_sans_engagement|length }}</span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            {% if membres_sans_engagement %}
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nom</th>
+                            <th>Téléphone</th>
+                            <th>Groupe</th>
+                            <th>Date d'inscription</th>
+                            <th class="no-print">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for membre in membres_sans_engagement %}
+                        <tr class="membre-item membre-sans-engagement">
+                            <td>{{ membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre }}</td>
+                            <td>{{ membre.telephone }}</td>
+                            <td>{{ membre.groupe or '-' }}</td>
+                            <td>{{ membre.created_at.strftime('%d/%m/%Y') }}</td>
+                            <td class="no-print">
+                                {% if current_user.role in ['admin', 'comptable'] %}
+                                <a href="#" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#proposerEngagementModal{{ membre.id }}">
+                                    <i class="fas fa-handshake"></i> Proposer engagement
+                                </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="fas fa-minus-circle fa-3x text-secondary mb-3"></i>
+                <p class="text-muted">Tous les membres ont au moins un engagement.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modals pour les notifications -->
+{% for membre in membres_en_cours %}
+<div class="modal fade" id="notifierModal{{ membre.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Notifier {{ membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Envoyer un rappel à ce membre concernant ses engagements en cours ?</p>
+                <p class="fw-bold">Total restant à payer: 
+                    {% set total_restant = namespace(value=0) %}
+                    {% for engagement in membre.engagements %}
+                        {% set total_restant.value = total_restant.value + engagement.montant_restant() %}
+                    {% endfor %}
+                    {{ total_restant.value|round(2) }} $
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <form action="{{ url_for('notifier_membre_engagement', id=membre.engagements[0].id) if membre.engagements else '#' }}" method="POST">
+                    <button type="submit" class="btn btn-warning">Envoyer notification</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<!-- Modals pour proposer un engagement -->
+{% for membre in membres_sans_engagement %}
+<div class="modal fade" id="proposerEngagementModal{{ membre.id }}" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Proposer un engagement à {{ membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ url_for('ajouter_engagement') }}" method="GET">
+                <div class="modal-body">
+                    <p>Vous allez être redirigé vers le formulaire d'ajout d'engagement pour ce membre.</p>
+                    <input type="hidden" name="membre_id" value="{{ membre.id }}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-success">Créer un engagement</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block js %}
+<script>
+    // Fonction de recherche
+    document.getElementById('searchInput').addEventListener('keyup', function() {
+        const searchText = this.value.toLowerCase();
+        const rows = document.querySelectorAll('.membre-item');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            if (text.includes(searchText)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    });
+    
+    // Tri des tables
+    document.querySelectorAll('th').forEach(header => {
+        if (!header.classList.contains('no-print') && header.textContent.trim() !== 'Actions') {
+            header.style.cursor = 'pointer';
+            header.addEventListener('click', () => {
+                const table = header.closest('table');
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                const index = Array.from(header.parentNode.children).indexOf(header);
+                
+                rows.sort((a, b) => {
+                    const aValue = a.children[index].textContent.trim();
+                    const bValue = b.children[index].textContent.trim();
+                    
+                    // Essayer de convertir en nombre si possible
+                    const aNum = isNaN(aValue) ? aValue : parseFloat(aValue);
+                    const bNum = isNaN(bValue) ? bValue : parseFloat(bValue);
+                    
+                    return aNum > bNum ? 1 : -1;
+                });
+                
+                // Vider et réinsérer les lignes triées
+                while (tbody.firstChild) {
+                    tbody.removeChild(tbody.firstChild);
+                }
+                
+                rows.forEach(row => tbody.appendChild(row));
+            });
+        }
+    });
+</script>
+{% endblock %}

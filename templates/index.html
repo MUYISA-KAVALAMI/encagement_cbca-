@@ -85,15 +85,25 @@
                     <span class="fw-bold d-inline-block mt-2">Transparence - Responsabilité - Communion</span>
                 </p>
                 <div class="d-flex flex-wrap gap-3 quick-actions">
+                    {% if current_user.role == 'admin' or current_user.role == 'comptable' %}
                     <a href="{{ url_for('ajouter_engagement') }}" class="btn btn-light btn-lg px-4 text-cbca fw-bold btn-action">
                         <i class="fas fa-plus-circle me-2"></i>Nouvel Engagement
                     </a>
+                    {% endif %}
                     <a href="{{ url_for('liste_membres') }}" class="btn btn-outline-light btn-lg px-4 btn-action">
                         <i class="fas fa-users me-2"></i>Voir les Membres
                     </a>
+                     {% if current_user.role == 'admin' or current_user.role == 'comptable' or current_user.role == 'caissier' %}
                     <a href="{{ url_for('liste_paiements') }}" class="btn btn-outline-light btn-lg px-4 btn-action">
                         <i class="fas fa-hand-holding-usd me-2"></i>Paiements
                     </a>
+                    {% endif %}
+                    <!-- NOUVEAU BOUTON - État des engagements -->
+    {% if current_user.role == 'admin' or current_user.role == 'comptable' or current_user.role == 'caissier' %}
+    <a href="{{ url_for('etat_engagements') }}" class="btn btn-outline-light btn-lg px-4 btn-action">
+        <i class="fas fa-chart-pie me-2"></i>État engagements
+    </a>
+    {% endif %}
                 </div>
             </div>
             <div class="col-lg-4 d-none d-lg-block">

@@ -411,7 +411,6 @@ def liste_engagements():
 
 @app.route('/engagements/ajouter', methods=['GET', 'POST'])
 @login_required
-@admin_required
 def ajouter_engagement():
     from models import Engagement, Membre
     if request.method == 'POST':
@@ -464,7 +463,6 @@ def ajouter_engagement():
 
 @app.route('/engagements/<int:id>/modifier', methods=['POST'])
 @login_required
-@admin_required
 def modifier_engagement(id):
     from models import Engagement
     engagement = Engagement.query.get_or_404(id)
@@ -730,7 +728,7 @@ def ajouter_utilisateur():
             db.session.rollback()
             flash(f"Erreur lors de l'ajout : {str(e)}", "danger")
 
-    roles = ['admin', 'secretaire', 'caissier', 'lecteur']
+    roles=['admin', 'secretaire', 'caissier','comptable','membre']
     return render_template('utilisateurs/ajouter.html', title="Ajouter un utilisateur", roles=roles)
 
 @app.route('/utilisateurs/<int:id>/modifier', methods=['GET', 'POST'])
@@ -753,7 +751,7 @@ def modifier_utilisateur(id):
             flash(f"Erreur : {str(e)}", "danger")
         return redirect(url_for('liste_utilisateurs'))
 
-    roles = ['admin', 'secretaire', 'caissier', 'lecteur']
+    roles = ['admin', 'secretaire', 'caissier','comptable','membre']
     return render_template('utilisateurs/modifier.html', title="Modifier utilisateur", user=user, roles=roles)
 
 @app.route('/utilisateurs/<int:id>/supprimer', methods=['POST'])
@@ -844,6 +842,137 @@ def mes_engagements():
     engagements = Engagement.query.filter_by(membre_id=membre.id).order_by(Engagement.date_limite).all()
     return render_template('engagements/mes_engagements.html', title="Mes engagements", engagements=engagements)
 
+@app.route('/etat-engagements')
+@login_required
+@role_required('admin', 'secretaire', 'comptable', 'caissier')
+def etat_engagements():
+    from models import Membre, Engagement
+    
+    # Récupérer tous les membres
+    tous_les_membres = Membre.query.all()
+    
+    # Catégoriser les membres
+    membres_a_jour = []
+    membres_en_cours = []
+    membres_sans_engagement = []
+    
+    for membre in tous_les_membres:
+        if not membre.engagements:
+            membres_sans_engagement.append(membre)
+        else:
+            # Vérifier si tous les engagements sont payés
+            tous_payes = True
+            for engagement in membre.engagements:
+                if engagement.montant_restant() > 0:
+                    tous_payes = False
+                    break
+            
+            if tous_payes:
+                membres_a_jour.append(membre)
+            else:
+                membres_en_cours.append(membre)
+    
+    return render_template(
+        'etat_engagements.html', 
+        title="État des engagements",
+        membres_a_jour=membres_a_jour,
+        membres_en_cours=membres_en_cours,
+        membres_sans_engagement=membres_sans_engagement
+    )
+
+@app.route('/statistiques-annuelles')
+@login_required
+@role_required('admin', 'comptable', 'caissier')
+def statistiques_annuelles():
+    from models import Engagement, Paiement, Membre
+    from sqlalchemy import extract, func
+    
+    # Année par défaut (année en cours)
+    annee = request.args.get('annee', datetime.now().year, type=int)
+    
+    # Récupérer les données statistiques
+    stats = {
+        'total_membres': Membre.query.count(),
+        'total_engagements': Engagement.query.filter(extract('year', Engagement.date_engagement) == annee).count(),
+        'total_paiements': Paiement.query.filter(extract('year', Paiement.date_paiement) == annee).count(),
+        'montant_total_engagements': db.session.query(func.sum(Engagement.montant_total))
+                                        .filter(extract('year', Engagement.date_engagement) == annee)
+                                        .scalar() or 0,
+        'montant_total_paiements': db.session.query(func.sum(Paiement.montant))
+                                    .filter(extract('year', Paiement.date_paiement) == annee)
+                                    .scalar() or 0,
+    }
+    
+    # Statistiques mensuelles
+    stats_mensuelles = []
+    for mois in range(1, 13):
+        engagements_mois = Engagement.query.filter(
+            extract('year', Engagement.date_engagement) == annee,
+            extract('month', Engagement.date_engagement) == mois
+        ).count()
+        
+        paiements_mois = Paiement.query.filter(
+            extract('year', Paiement.date_paiement) == annee,
+            extract('month', Paiement.date_paiement) == mois
+        ).count()
+        
+        montant_engagements_mois = db.session.query(func.sum(Engagement.montant_total)).filter(
+            extract('year', Engagement.date_engagement) == annee,
+            extract('month', Engagement.date_engagement) == mois
+        ).scalar() or 0
+        
+        montant_paiements_mois = db.session.query(func.sum(Paiement.montant)).filter(
+            extract('year', Paiement.date_paiement) == annee,
+            extract('month', Paiement.date_paiement) == mois
+        ).scalar() or 0
+        
+        stats_mensuelles.append({
+            'mois': mois,
+            'nom_mois': ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 
+                         'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][mois-1],
+            'engagements': engagements_mois,
+            'paiements': paiements_mois,
+            'montant_engagements': montant_engagements_mois,
+            'montant_paiements': montant_paiements_mois
+        })
+    
+    # Top 5 des membres par montant engagé - CORRIGÉ
+    top_membres_engagements = db.session.query(
+        Membre, func.sum(Engagement.montant_total).label('total_engage')
+    ).join(Engagement, Membre.id == Engagement.membre_id).filter(
+        extract('year', Engagement.date_engagement) == annee
+    ).group_by(Membre.id).order_by(func.sum(Engagement.montant_total).desc()).limit(5).all()
+    
+    # Top 5 des membres par montant payé - CORRIGÉ
+    top_membres_paiements = db.session.query(
+        Membre, func.sum(Paiement.montant).label('total_paye')
+    ).join(Engagement, Membre.id == Engagement.membre_id).join(
+        Paiement, Engagement.id == Paiement.engagement_id
+    ).filter(
+        extract('year', Paiement.date_paiement) == annee
+    ).group_by(Membre.id).order_by(func.sum(Paiement.montant).desc()).limit(5).all()
+    
+    # Années disponibles pour le filtre
+    annees_engagements = [int(annee[0]) for annee in db.session.query(
+        extract('year', Engagement.date_engagement)
+    ).distinct().all() if annee[0] is not None]
+    
+    annees_paiements = [int(annee[0]) for annee in db.session.query(
+        extract('year', Paiement.date_paiement)
+    ).distinct().all() if annee[0] is not None]
+    
+    annees_disponibles = sorted(set(annees_engagements + annees_paiements), reverse=True)
+    
+    return render_template(
+        'statistiques_annuelles.html',
+        title="Statistiques Annuelles",
+        annee=annee,
+        stats=stats,
+        stats_mensuelles=stats_mensuelles,
+        top_membres_engagements=top_membres_engagements,
+        top_membres_paiements=top_membres_paiements,
+        annees_disponibles=annees_disponibles
+    )
 # -----------------------
 # Init DB + run
 # -----------------------

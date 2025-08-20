@@ -1,0 +1,389 @@
+{% extends "base.html" %}
+
+{% block title %}Statistiques Annuelles - CBCA Vulumbi{% endblock %}
+
+{% block css %}
+<style>
+    .stats-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transition: transform 0.3s;
+        height: 100%;
+    }
+    
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    }
+    
+    .card-header-stats {
+        border-top-left-radius: 10px !important;
+        border-top-right-radius: 10px !important;
+        font-weight: 600;
+    }
+    
+    .card-engagements {
+        border-top: 4px solid #e30613;
+    }
+    
+    .card-engagements .card-header-stats {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    
+    .card-paiements {
+        border-top: 4px solid #28a745;
+    }
+    
+    .card-paiements .card-header-stats {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .card-membres {
+        border-top: 4px solid #007bff;
+    }
+    
+    .card-membres .card-header-stats {
+        background-color: #cce5ff;
+        color: #004085;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .table-stats th {
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+    }
+    
+    .progress {
+        height: 20px;
+        margin-bottom: 10px;
+    }
+    
+    .filter-section {
+        background-color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="text-cbca">
+            <i class="fas fa-chart-bar me-2"></i>Statistiques Annuelles
+        </h1>
+    </div>
+
+    <!-- Filtre par année -->
+    <div class="filter-section mb-4">
+        <form method="GET" class="row align-items-center">
+            <div class="col-md-4">
+                <label for="annee" class="form-label fw-bold">Sélectionner l'année :</label>
+                <select class="form-select" id="annee" name="annee" onchange="this.form.submit()">
+                    {% for annee_option in annees_disponibles %}
+                    <option value="{{ annee_option }}" {% if annee_option == annee %}selected{% endif %}>
+                        {{ annee_option }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-outline-cbca" onclick="imprimerStats()">
+                        <i class="fas fa-print me-2"></i>Imprimer
+                    </button>
+                    <button type="button" class="btn btn-cbca" onclick="exporterExcel()">
+                        <i class="fas fa-file-excel me-2"></i>Exporter Excel
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cartes de statistiques globales -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card card-membres">
+                <div class="card-header card-header-stats text-center">
+                    <i class="fas fa-users me-2"></i>Membres
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="text-primary">{{ stats.total_membres }}</h2>
+                    <p class="mb-0">Total membres inscrits</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card card-engagements">
+                <div class="card-header card-header-stats text-center">
+                    <i class="fas fa-handshake me-2"></i>Engagements
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="text-danger">{{ stats.total_engagements }}</h2>
+                    <p class="mb-0">Total pour {{ annee }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card card-paiements">
+                <div class="card-header card-header-stats text-center">
+                    <i class="fas fa-money-bill-wave me-2"></i>Paiements
+                </div>
+                <div class="card-body text-center">
+                    <h2 class="text-success">{{ stats.total_paiements }}</h2>
+                    <p class="mb-0">Total pour {{ annee }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-header card-header-stats text-center bg-warning text-dark">
+                    <i class="fas fa-chart-line me-2"></i>Montants
+                </div>
+                <div class="card-body text-center">
+                    <h4 class="text-danger">{{ stats.montant_total_engagements|round(2) }} $</h4>
+                    <small class="text-muted">Engagés</small>
+                    <h4 class="text-success">{{ stats.montant_total_paiements|round(2) }} $</h4>
+                    <small class="text-muted">Payés</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphiques mensuels -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-cbca text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>Engagements par mois ({{ annee }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartEngagementsMensuels"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-cbca text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-line me-2"></i>Paiements par mois ({{ annee }})
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="chartPaiementsMensuels"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau détaillé mensuel -->
+    <div class="card mb-4">
+        <div class="card-header bg-cbca text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-table me-2"></i>Détail mensuel - {{ annee }}
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped table-stats">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Mois</th>
+                            <th class="text-end">Engagements</th>
+                            <th class="text-end">Montant engagé</th>
+                            <th class="text-end">Paiements</th>
+                            <th class="text-end">Montant payé</th>
+                            <th class="text-end">Taux de réalisation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stats_mois in stats_mensuelles %}
+                        <tr>
+                            <td><strong>{{ stats_mois.nom_mois }}</strong></td>
+                            <td class="text-end">{{ stats_mois.engagements }}</td>
+                            <td class="text-end">{{ stats_mois.montant_engagements|round(2) }} $</td>
+                            <td class="text-end">{{ stats_mois.paiements }}</td>
+                            <td class="text-end">{{ stats_mois.montant_paiements|round(2) }} $</td>
+                            <td class="text-end">
+                                {% if stats_mois.montant_engagements > 0 %}
+                                    {{ ((stats_mois.montant_paiements / stats_mois.montant_engagements) * 100)|round(1) }}%
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-dark">
+                        <tr>
+                            <td><strong>TOTAL {{ annee }}</strong></td>
+                            <td class="text-end"><strong>{{ stats.total_engagements }}</strong></td>
+                            <td class="text-end"><strong>{{ stats.montant_total_engagements|round(2) }} $</strong></td>
+                            <td class="text-end"><strong>{{ stats.total_paiements }}</strong></td>
+                            <td class="text-end"><strong>{{ stats.montant_total_paiements|round(2) }} $</strong></td>
+                            <td class="text-end">
+                                <strong>
+                                    {% if stats.montant_total_engagements > 0 %}
+                                        {{ ((stats.montant_total_paiements / stats.montant_total_engagements) * 100)|round(1) }}%
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </strong>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Classements des membres -->
+    <div class="row mb-4">
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-cbca">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trophy me-2"></i>Top 5 des engagements - {{ annee }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if top_membres_engagements %}
+                    <div class="list-group">
+                        {% for membre, total_engage in top_membres_engagements %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre }}</h6>
+                                <small class="text-muted">{{ membre.telephone }}</small>
+                            </div>
+                            <span class="badge bg-danger rounded-pill">{{ total_engage|round(2) }} $</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">Aucun engagement pour cette année</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-header bg-cbca">
+                    <h5 class="mb-0">
+                        <i class="fas fa-medal me-2"></i>Top 5 des paiements - {{ annee }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if top_membres_paiements %}
+                    <div class="list-group">
+                        {% for membre, total_paye in top_membres_paiements %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ membre.cartebapteme.nom if membre.cartebapteme else membre.code_membre }}</h6>
+                                <small class="text-muted">{{ membre.telephone }}</small>
+                            </div>
+                            <span class="badge bg-success rounded-pill">{{ total_paye|round(2) }} $</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">Aucun paiement pour cette année</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // Données pour les graphiques
+    const moisLabels = {{ stats_mensuelles|map(attribute='nom_mois')|list|tojson }};
+    const engagementsData = {{ stats_mensuelles|map(attribute='engagements')|list|tojson }};
+    const paiementsData = {{ stats_mensuelles|map(attribute='paiements')|list|tojson }};
+    const montantEngagementsData = {{ stats_mensuelles|map(attribute='montant_engagements')|list|tojson }};
+    const montantPaiementsData = {{ stats_mensuelles|map(attribute='montant_paiements')|list|tojson }};
+
+    // Graphique des engagements mensuels
+    const ctxEngagements = document.getElementById('chartEngagementsMensuels').getContext('2d');
+    new Chart(ctxEngagements, {
+        type: 'bar',
+        data: {
+            labels: moisLabels,
+            datasets: [{
+                label: 'Nombre d\'engagements',
+                data: engagementsData,
+                backgroundColor: 'rgba(227, 6, 19, 0.7)',
+                borderColor: 'rgba(227, 6, 19, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Graphique des paiements mensuels
+    const ctxPaiements = document.getElementById('chartPaiementsMensuels').getContext('2d');
+    new Chart(ctxPaiements, {
+        type: 'line',
+        data: {
+            labels: moisLabels,
+            datasets: [{
+                label: 'Montant des paiements ($)',
+                data: montantPaiementsData,
+                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+
+    // Fonction d'impression
+    function imprimerStats() {
+        window.print();
+    }
+
+    // Fonction d'export Excel (simplifiée)
+    function exporterExcel() {
+        alert('Fonction d\'export Excel sera implémentée prochainement');
+        // Implémentation réelle utiliserait une librairie comme SheetJS
+    }
+</script>
+{% endblock %}
